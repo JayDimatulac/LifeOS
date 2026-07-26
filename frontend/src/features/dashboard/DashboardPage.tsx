@@ -16,6 +16,11 @@ import { useJournalStore } from "@/features/journal/journalStore";
 import { dateKey } from "@/utils/date";
 import type { StatTile } from "@/types/dashboard";
 import { useDashboard } from "./dashboardService";
+import { useSettingsStore } from '@/features/settings/settingsStore';
+import { useHabitsStore } from '@/features/habits/habitsStore';
+import { overallStreak } from '@/features/habits/habitLogic';
+import { useTasksStore } from '@/features/tasks/tasksStore';
+import { daysSince } from '@/utils/date';
 
 export function DashboardPage() {
   const { data, isLoading, isError } = useDashboard();
@@ -25,6 +30,10 @@ export function DashboardPage() {
   const waterGoal = useHealthStore((s) => s.waterGoal);
   const sleepLog = useHealthStore((s) => s.sleepLog);
   const journalEntries = useJournalStore((s) => s.entries);
+  const displayName = useSettingsStore((s) => s.displayName);
+const habits = useHabitsStore((s) => s.habits);
+const tasks = useTasksStore((s) => s.tasks);
+const journeyStartDate = useSettingsStore((s) => s.journeyStartDate);
 
   if (isLoading || !data) {
     return (
@@ -107,18 +116,26 @@ export function DashboardPage() {
     if (stat.icon === "health") return moodStat;
     return stat;
   });
-
+  
+  const dayCount = daysSince(journeyStartDate);
+  const chapterLabel = `Chapter ${dayCount}`;
+  const streakDays = overallStreak(habits);
+  const doneTasks = tasks.filter((t) => t.done).length;
+  const tasksDoneRatio = `${doneTasks}/${tasks.length}`;
+  
   return (
     <>
       <HeroBanner
-        userName={data.userName}
-        chapterLabel={data.chapterLabel}
-        quote={data.quote}
-        weatherSummary={data.weatherSummary}
-        temperatureC={data.temperatureC}
-        streakDays={data.streakDays}
-        tasksDoneRatio={data.tasksDoneRatio}
-      />
+        
+  userName={displayName}
+  chapterLabel={chapterLabel}
+  quote={data.quote}
+  weatherSummary={data.weatherSummary}
+  temperatureC={data.temperatureC}
+  streakDays={streakDays}
+  tasksDoneRatio={tasksDoneRatio}
+/>
+  
 
       <div className="grid">
         <ConstellationCard areas={data.lifeAreas} />

@@ -1,4 +1,4 @@
-import type { Habit } from './types';
+import type { Habit } from "./types";
 
 export function toKey(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -45,4 +45,19 @@ export function lastNDays(count: number): string[] {
   }
 
   return days;
+}
+/** Consecutive days (with today's grace period) where at least one habit was completed. */
+export function overallStreak(habits: Habit[]): number {
+  let streak = 0;
+  const cursor = new Date();
+  const anyDoneOn = (key: string) => habits.some((h) => h.history[key]);
+
+  if (!anyDoneOn(toKey(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  while (anyDoneOn(toKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
 }

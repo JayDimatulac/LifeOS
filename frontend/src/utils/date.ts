@@ -21,3 +21,11 @@ export function buildMonthGrid(year: number, month: number): Date[] {
   }
   return days;
 }
+/** Day 1 = the start date itself. Counts real calendar days, not 24h periods. */
+export function daysSince(startKey: string): number {
+  const start = new Date(`${startKey}T00:00:00`);
+  const now = new Date();
+  const startMidnight = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return Math.floor((nowMidnight - startMidnight) / 86400000) + 1;
+}

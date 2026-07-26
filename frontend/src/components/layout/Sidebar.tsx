@@ -1,9 +1,13 @@
 import { Icon } from '@/components/common/IconSprite';
 import { NavItem } from '@/components/navigation/NavItem';
 import { useThemeStore } from '@/stores/themeStore';
+import { useSettingsStore } from '@/features/settings/settingsStore';
+import { daysSince } from '@/utils/date';
 
 export function Sidebar() {
   const { sidebarCollapsed, toggleSidebar } = useThemeStore();
+  const displayName = useSettingsStore((s) => s.displayName);
+  const dayCount = daysSince(useSettingsStore((s) => s.journeyStartDate));
 
   return (
     <aside className={`sidebar${sidebarCollapsed ? ' collapsed' : ''}`}>
@@ -52,10 +56,10 @@ export function Sidebar() {
       </nav>
 
       <div className="side-foot">
-        <div className="side-avatar serif">K</div>
+        <div className="side-avatar serif">{displayName.charAt(0).toUpperCase()}</div>
         <div className="side-foot-text">
-          <div className="n">Kai Reyes</div>
-          <div className="r">Day 1 of the journey</div>
+          <div className="n">{displayName}</div>
+          <div className="r">Day {dayCount} of the journey</div>
         </div>
       </div>
     </aside>

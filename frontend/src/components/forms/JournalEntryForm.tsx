@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import toast from "react-hot-toast";
 import { useJournalStore } from "@/features/journal/journalStore";
 
 const MOOD_OPTIONS = [
@@ -48,7 +49,6 @@ export function JournalEntryForm({
     defaultValues: { text: initialText },
   });
 
-  // Re-sync the form when the selected day changes (e.g. editing a past entry).
   useEffect(() => {
     reset({ text: initialText });
     setMoods(initialMoods);
@@ -63,6 +63,7 @@ export function JournalEntryForm({
 
   function onSubmit(values: FormValues) {
     saveEntry(dateKeyValue, values.text.trim(), moods);
+    toast.success("Entry saved");
   }
 
   return (

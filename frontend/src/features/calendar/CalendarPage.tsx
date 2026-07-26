@@ -2,7 +2,10 @@ import { useMemo, useState } from "react";
 import { Icon } from "@/components/common/IconSprite";
 import { useTasksStore } from "@/features/tasks/tasksStore";
 import { useHabitsStore } from "@/features/habits/habitsStore";
+import { useJournalStore } from "@/features/journal/journalStore";
+import { useFinanceStore } from "@/features/finance/financeStore";
 import { formatDueDate } from "@/features/tasks/taskLogic";
+import { formatCurrency } from "@/features/finance/financeLogic";
 import { buildMonthGrid, dateKey, isSameMonth } from "@/utils/date";
 import { habitsDoneOnDay, tasksOnDay } from "./calendarLogic";
 
@@ -17,6 +20,8 @@ export function CalendarPage() {
   const tasks = useTasksStore((s) => s.tasks);
   const habits = useHabitsStore((s) => s.habits);
   const toggleDone = useTasksStore((s) => s.toggleDone);
+  const journalEntries = useJournalStore((s) => s.entries);
+  const expenses = useFinanceStore((s) => s.expenses);
 
   const today = useMemo(() => new Date(), []);
   const [cursor, setCursor] = useState(
@@ -36,15 +41,23 @@ export function CalendarPage() {
   function goToMonth(offset: number) {
     setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + offset, 1));
   }
-
   function goToToday() {
     const now = new Date();
     setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
     setSelected(now);
   }
 
+  const selectedKey = dateKey(selected);
   const selectedTasks = tasksOnDay(tasks, selected);
   const selectedHabitsDone = habitsDoneOnDay(habits, selected);
+  const selectedHabitsList = habits.filter((h) => h.history[selectedKey]);
+  const selectedJournal = journalEntries[selectedKey];
+  const selectedExpenses = expenses.filter((e) => e.date === selectedKey);
+  const selectedExpenseTotal = selectedExpenses.reduce(
+    (sum, e) => sum + e.amount,
+    0,
+  );
+  const isToday = selectedKey === dateKey(today);
 
   return (
     <>
@@ -96,17 +109,17 @@ export function CalendarPage() {
         <div className="calendar-grid">
           {days.map((day) => {
             const inMonth = isSameMonth(day, cursor);
-            const isToday = dateKey(day) === dateKey(today);
-            const isSelected = dateKey(day) === dateKey(selected);
+            const dayKey = dateKey(day);
+            const isTodayCell = dayKey === dateKey(today);
+            const isSelected = dayKey === selectedKey;
             const dayTasks = tasksOnDay(tasks, day);
-            const habitsDone = habitsDoneOnDay(habits, day);
+            const habitsDoneCount = habitsDoneOnDay(habits, day);
+            const hasJournal = !!journalEntries[dayKey];
 
             return (
               <button
-                key={dateKey(day)}
-                className={`calendar-day${inMonth ? "" : " other-month"}${isToday ? " today" : ""}${
-                  isSelected ? " selected" : ""
-                }`}
+                key={dayKey}
+                className={`calendar-day${inMonth ? "" : " other-month"}${isTodayCell ? " today" : ""}${isSelected ? " selected" : ""}`}
                 onClick={() => setSelected(day)}
               >
                 <span className="calendar-day-num">{day.getDate()}</span>
@@ -118,8 +131,11 @@ export function CalendarPage() {
                       style={{ background: PRIORITY_COLOR[t.priority] }}
                     />
                   ))}
-                  {habitsDone > 0 && (
+                  {habitsDoneCount > 0 && (
                     <Icon name="flame" className="icon cal-flame" />
+                  )}
+                  {hasJournal && (
+                    <Icon name="quill" className="icon cal-flame" />
                   )}
                 </span>
               </button>
@@ -128,15 +144,18 @@ export function CalendarPage() {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-head">
           <div className="card-title">
             <Icon name="calendar" />
-            {selected.toLocaleDateString([], {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
+            {isToday
+              ? "Today"
+              : selected.toLocaleDateString([], {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
           </div>
           {selectedHabitsDone > 0 && (
             <span className="card-sub">
@@ -145,7 +164,6 @@ export function CalendarPage() {
             </span>
           )}
         </div>
-
         {selectedTasks.length === 0 ? (
           <p style={{ color: "var(--text-muted)", fontSize: 13.5 }}>
             Nothing due this day.
@@ -177,6 +195,73 @@ export function CalendarPage() {
           </div>
         )}
       </div>
+
+      {selectedJournal && (
+        <div className="card journal-card" style={{ marginBottom: 20 }}>
+          <div className="card-head">
+            <div className="card-title">
+              <Icon name="quill" />
+              Journal
+            </div>
+          </div>
+          <div className="journal-text">{selectedJournal.text}</div>
+          {selectedJournal.moods.length > 0 && (
+            <div className="mood-row">
+              {selectedJournal.moods.map((m) => (
+                <span key={m} className="mood-pill">
+                  {m}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedHabitsList.length > 0 && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card-head">
+            <div className="card-title">
+              <Icon name="habit" />
+              Habits Completed
+            </div>
+          </div>
+          <div className="habit-list">
+            {selectedHabitsList.map((h) => (
+              <div className="habit-row" key={h.id}>
+                <div className="habit-check done">
+                  <Icon name="check" />
+                </div>
+                <div className="habit-name">{h.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedExpenses.length > 0 && (
+        <div className="card">
+          <div className="card-head">
+            <div className="card-title">
+              <Icon name="finance" />
+              Expenses
+            </div>
+            <span className="card-sub">
+              {formatCurrency(selectedExpenseTotal)}
+            </span>
+          </div>
+          <div className="task-full-list">
+            {selectedExpenses.map((e) => (
+              <div className="task-full-row" key={e.id}>
+                <div className="expense-category">{e.category}</div>
+                <div className="task-full-body">
+                  <div className="task-full-title">{e.description}</div>
+                </div>
+                <div className="expense-amount">{formatCurrency(e.amount)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }

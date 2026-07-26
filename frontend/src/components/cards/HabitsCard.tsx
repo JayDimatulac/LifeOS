@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Icon } from '@/components/common/IconSprite';
 import { useHabitsStore } from '@/features/habits/habitsStore';
-import { computeStreak, isDoneToday } from '@/features/habits/habitLogic';
-
+import toast from 'react-hot-toast';
+import { computeStreak, isDoneToday, overallStreak } from '@/features/habits/habitLogic';
 /**
  * Reads directly from the shared habits store (not props) so this card and
  * the full Habits page (/habits) always show the same state — toggling a
@@ -32,7 +32,11 @@ export function HabitsCard() {
             <div className="habit-row" key={habit.id}>
               <button
                 className={`habit-check${done ? ' done' : ''}`}
-                onClick={() => toggleToday(habit.id)}
+                onClick={() => {
+                  const wasIncomplete = !isDoneToday(habit);
+                  toggleToday(habit.id);
+                  if (wasIncomplete) toast.success(`${habit.name} ✓`);
+                }}
                 aria-pressed={done}
                 aria-label={`Mark ${habit.name} ${done ? 'incomplete' : 'complete'}`}
               >
