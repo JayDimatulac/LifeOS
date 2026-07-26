@@ -1654,3 +1654,48 @@ html.light .theme-switch .knob {
   color: var(--text-muted);
   text-transform: uppercase;
 }
+/* ---- Analytics ---- */
+.analytics-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.chart-subtitle {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.mood-freq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mood-freq-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 30px;
+  align-items: center;
+  gap: 10px;
+}
+.mood-freq-label {
+  font-size: 12.5px;
+}
+.mood-freq-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--card-bg-alt);
+  overflow: hidden;
+}
+.mood-freq-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-soft));
+  border-radius: 4px;
+}
+.mood-freq-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: "IBM Plex Mono", monospace;
+  text-align: right;
+}
