@@ -9,10 +9,22 @@ import { StatTileCard } from "@/components/cards/StatTileCard";
 import { AIInsightCard } from "@/components/cards/AIInsightCard";
 import { DeadlinesCard } from "@/components/cards/DeadlinesCard";
 import { DashboardSkeleton } from "@/components/common/Skeleton";
+import { useFinanceStore } from "@/features/finance/financeStore";
+import { totalForDay } from "@/features/finance/financeLogic";
+import { useHealthStore } from "@/features/health/healthStore";
+import { useJournalStore } from "@/features/journal/journalStore";
+import { dateKey } from "@/utils/date";
+import type { StatTile } from "@/types/dashboard";
 import { useDashboard } from "./dashboardService";
 
 export function DashboardPage() {
   const { data, isLoading, isError } = useDashboard();
+  const expenses = useFinanceStore((s) => s.expenses);
+  const monthlyBudget = useFinanceStore((s) => s.monthlyBudget);
+  const waterLog = useHealthStore((s) => s.waterLog);
+  const waterGoal = useHealthStore((s) => s.waterGoal);
+  const sleepLog = useHealthStore((s) => s.sleepLog);
+  const journalEntries = useJournalStore((s) => s.entries);
 
   if (isLoading || !data) {
     return (
@@ -38,6 +50,64 @@ export function DashboardPage() {
     );
   }
 
+  const today = dateKey(new Date());
+
+  const dailySpend = totalForDay(expenses, today);
+  const dailyBudget = monthlyBudget > 0 ? monthlyBudget / 30 : 0;
+  const spendPercent =
+    dailyBudget > 0 ? Math.round((dailySpend / dailyBudget) * 100) : null;
+  const financeStat: StatTile = {
+    label: "Spend today",
+    value: dailySpend > 0 ? `₱${dailySpend.toLocaleString()}` : "₱0",
+    trend:
+      spendPercent !== null
+        ? `${spendPercent}% of daily budget`
+        : "Set a budget on Finance page",
+    trendType: "flat",
+    icon: "finance",
+  };
+
+  const todayWater = waterLog[today] ?? 0;
+  const litersToday = Math.round(todayWater * 0.25 * 10) / 10;
+  const waterStat: StatTile = {
+    label: "Water",
+    value: `${litersToday}L`,
+    trend:
+      todayWater > 0
+        ? `${todayWater} of ${waterGoal} glasses`
+        : "Log your first glass",
+    trendType: todayWater > 0 ? "up" : "flat",
+    icon: "drop",
+  };
+
+  const todaySleep = sleepLog[today];
+  const sleepStat: StatTile = {
+    label: "Sleep",
+    value: todaySleep !== undefined ? `${todaySleep}h` : "—",
+    trend: todaySleep !== undefined ? "Logged for today" : "No data yet",
+    trendType: "flat",
+    icon: "moon",
+  };
+
+  const todayMood = journalEntries[today]?.moods?.[0];
+  const moodStat: StatTile = {
+    label: "Mood",
+    value: todayMood ?? "—",
+    trend: todayMood
+      ? "From today's journal entry"
+      : "Write today's entry to log mood",
+    trendType: "flat",
+    icon: "health",
+  };
+
+  const stats = data.stats.map((stat) => {
+    if (stat.icon === "finance") return financeStat;
+    if (stat.icon === "drop") return waterStat;
+    if (stat.icon === "moon") return sleepStat;
+    if (stat.icon === "health") return moodStat;
+    return stat;
+  });
+
   return (
     <>
       <HeroBanner
@@ -56,9 +126,9 @@ export function DashboardPage() {
         <TasksCard />
         <BookCard />
         <JournalCard />
-        <AdventureCard stops={data.adventure} />
+        <AdventureCard />
 
-        {data.stats.map((stat) => (
+        {stats.map((stat) => (
           <StatTileCard stat={stat} key={stat.label} />
         ))}
 
